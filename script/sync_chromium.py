@@ -51,10 +51,11 @@ def sync_java_files(options):
     sync(native_libraries_dir, java_dir, "sync")
 
 def sync_so_files(options):
-    app_lib_dir = os.path.join(constants.DIR_APP_ROOT, "src", "main", "jniLibs")
+    app_lib_dir = os.path.join(constants.DIR_APP_ROOT, "src", "main", "jniLibs","armeabi-v7a")
     chrome_so_lib_dir = os.path.join(options.chromium_root, "out", options.buildtype,
                                        "chrome_public_apk", "libs", "armeabi-v7a")
-    args = {'only':['\\.so$']}
+    CleanDir(app_lib_dir)
+    args = {'only':['.*\\.so$']}
     sync(chrome_so_lib_dir, app_lib_dir, "sync", **args)
 
 def sync_jar_files(options):
@@ -146,6 +147,20 @@ def sync_data_files(options):
     chrome_public_assets_dir = os.path.join(options.chromium_root, "out", options.buildtype, "assets", "chrome_public_apk")
     sync(chrome_public_assets_dir, assets_dir, "sync")
 
+def CleanDir(Dir):
+    if os.path.isdir(Dir):
+        paths = os.listdir(Dir)
+        for path in paths:
+            filePath = os.path.join(Dir, path)
+            if os.path.isfile(filePath):
+                try:
+                    os.remove(filePath)
+                except os.error:
+                    autoRun.exception("remove %s error." %filePath)
+            elif os.path.isdir(filePath):
+                shutil.rmtree(filePath,True)
+    return True
+
 def main(argv):
     parser = optparse.OptionParser(usage='Usage: %prog [options]', description=__doc__)
     parser.add_option('--chromium_root',
@@ -159,16 +174,16 @@ def main(argv):
     if options.buildtype not in ["Debug", "Release"]:
         print("buildtype argument value must be Debug or Release")
         exit(0)
-
-    sync_java_files(options)
-    sync_jar_files(options)
-    sync_chromium_res_files(options)
-    sync_ui_res_files(options)
-    sync_content_res_files(options)
-    sync_datausagechart_res_files(options)
-    sync_androidmedia_res_files(options)
-    sync_manifest_files(options)
-    sync_data_files(options)
+    sync_so_files(options)
+#    sync_java_files(options)
+#    sync_jar_files(options)
+#    sync_chromium_res_files(options)
+#    sync_ui_res_files(options)
+#    sync_content_res_files(options)
+#    sync_datausagechart_res_files(options)
+#    sync_androidmedia_res_files(options)
+#    sync_manifest_files(options)
+ #   sync_data_files(options)
 
 if __name__ == '__main__':
     main(sys.argv)
