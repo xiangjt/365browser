@@ -7,6 +7,7 @@
 import optparse
 import os
 import sys
+import shutil
 
 import constants
 import resource_util
@@ -17,12 +18,13 @@ from dirsync import sync
 def sync_java_files(options):
     app_java_dir = os.path.join(constants.DIR_APP_ROOT, "src", "main", "java")
     chrome_java_dir = os.path.join(options.chromium_root, "chrome", "android", "java", "src")
+    CleanDir(app_java_dir)
     args = {'exclude': ['\S+\\.aidl']}
     sync(chrome_java_dir, app_java_dir, "sync", **args)
 
     # sync aidl files
-
     app_aidl_dir = os.path.join(constants.DIR_APP_ROOT, "src", "main", "aidl")
+    CleanDir(app_aidl_dir)
     args = {'only': ['\S+\\.aidl'], 'ignore': ['\S*common.aidl']}
     sync(chrome_java_dir, app_aidl_dir, "sync", **args)
 
@@ -48,6 +50,11 @@ def sync_java_files(options):
     native_libraries_dir = os.path.join(options.chromium_root, "out", options.buildtype,
                                         "chrome_public_apk", "native_libraries_java")
     java_dir = os.path.join(constants.DIR_APP_ROOT, "src", "main", "java", "org", "chromium", "base", "library_loader")
+    try:
+        os.makedirs(java_dir)
+        os.remove(os.path.join(java_dir, "NativeLibraries.java"))
+    except os.error:
+        print("sync_manifest_files error.")
     sync(native_libraries_dir, java_dir, "sync")
 
 def sync_so_files(options):
@@ -61,6 +68,7 @@ def sync_so_files(options):
 def sync_jar_files(options):
     app_lib_dir = os.path.join(constants.DIR_APP_ROOT, "libs")
     chrome_java_lib_dir = os.path.join(options.chromium_root, "out", options.buildtype, "lib.java")
+    CleanDir(app_lib_dir)
     args = {'only':['\w+_java\\.jar$', 'cacheinvalidation_javalib\\.jar$', 'jsr_305_javalib\\.jar$',
                 'protobuf_nano_javalib\\.jar$', 'web_contents_delegate_android_java\\.jar$'],
             'ignore': ['chrome_java\\.jar$']}
@@ -69,6 +77,7 @@ def sync_jar_files(options):
 def sync_chromium_res_files(options):
     library_res_dir = os.path.join(constants.DIR_LIBRARIES_ROOT, "chrome_res", "src", "main", "res")
     chrome_res_dir = os.path.join(options.chromium_root, "chrome", "android", "java", "res")
+    CleanDir(library_res_dir)
     sync(chrome_res_dir, library_res_dir, "sync")
 
     chrome_res_dir = os.path.join(options.chromium_root, "chrome", "android", "java", "res_chromium")
@@ -92,7 +101,7 @@ def sync_chromium_res_files(options):
 def sync_ui_res_files(options):
     library_res_dir = os.path.join(constants.DIR_LIBRARIES_ROOT, "ui_res", "src", "main", "res")
     ui_res_dir = os.path.join(options.chromium_root, "ui", "android", "java", "res")
-
+    CleanDir(library_res_dir)
     sync(ui_res_dir, library_res_dir, "sync")
 
     # sync grd generated string resources
@@ -104,6 +113,7 @@ def sync_ui_res_files(options):
 def sync_content_res_files(options):
     library_res_dir = os.path.join(constants.DIR_LIBRARIES_ROOT, "content_res", "src", "main", "res")
     content_res_dir = os.path.join(options.chromium_root, "content", "public", "android", "java", "res")
+    CleanDir(library_res_dir)
     sync(content_res_dir, library_res_dir, "sync")
 
     # sync grd generated string resources
@@ -115,17 +125,23 @@ def sync_content_res_files(options):
 def sync_datausagechart_res_files(options):
     library_res_dir = os.path.join(constants.DIR_LIBRARIES_ROOT, "datausagechart_res", "src", "main", "res")
     datausagechart_res_dir = os.path.join(options.chromium_root, "third_party", "android_data_chart", "java", "res")
+    CleanDir(library_res_dir)
     sync(datausagechart_res_dir, library_res_dir, "sync")
 
 def sync_androidmedia_res_files(options):
     library_res_dir = os.path.join(constants.DIR_LIBRARIES_ROOT, "androidmedia_res", "src", "main", "res")
     media_res_dir = os.path.join(options.chromium_root, "third_party", "android_media", "java", "res")
+    CleanDir(library_res_dir)
     sync(media_res_dir, library_res_dir, "sync")
 
 def sync_manifest_files(options):
     main_dir = os.path.join(constants.DIR_APP_ROOT, "src", "main")
     public_apk_gen_dir = os.path.join(options.chromium_root, "out", options.buildtype,
                                       "gen", "chrome_public_apk_manifest")
+    try:
+        os.remove(os.path.join(main_dir, "AndroidManifest.xml"))
+    except os.error:
+        print("sync_manifest_files error.")
     sync(public_apk_gen_dir, main_dir, "sync")
 
     # sync meta xml files
@@ -145,6 +161,7 @@ def sync_data_files(options):
 
     assets_dir = os.path.join(constants.DIR_APP_ROOT, "src", "main", "assets")
     chrome_public_assets_dir = os.path.join(options.chromium_root, "out", options.buildtype, "assets", "chrome_public_apk")
+    CleanDir(assets_dir)
     sync(chrome_public_assets_dir, assets_dir, "sync")
 
 def CleanDir(Dir):
@@ -175,15 +192,15 @@ def main(argv):
         print("buildtype argument value must be Debug or Release")
         exit(0)
     sync_so_files(options)
-#    sync_java_files(options)
-#    sync_jar_files(options)
-#    sync_chromium_res_files(options)
-#    sync_ui_res_files(options)
-#    sync_content_res_files(options)
-#    sync_datausagechart_res_files(options)
-#    sync_androidmedia_res_files(options)
-#    sync_manifest_files(options)
- #   sync_data_files(options)
+    sync_java_files(options)
+    sync_jar_files(options)
+    sync_chromium_res_files(options)
+    sync_ui_res_files(options)
+    sync_content_res_files(options)
+    sync_datausagechart_res_files(options)
+    sync_androidmedia_res_files(options)
+    sync_manifest_files(options)
+    sync_data_files(options)
 
 if __name__ == '__main__':
     main(sys.argv)
